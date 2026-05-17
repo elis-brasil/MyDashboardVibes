@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Por onde começo hoje? ✦</title>
+  <meta name="description" content="Dashboard de início de dia — emails, reuniões e tarefas num só lugar." />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='85'>✦</text></svg>" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
+  <script src="https://accounts.google.com/gsi/client" async></script>
+
+  <style>
+    :root {
+      --bg: #f5f0f7;
+      --surface: rgba(255, 255, 255, 0.72);
+      --border: rgba(180, 140, 200, 0.25);
+      --rose: #c9748f;
+      --mauve: #7e5a9b;
+      --lilac: #b89dce;
+      --sage: #7aab95;
+      --cream: #fdf8f4;
+      --text: #2e1f3e;
+      --muted: #8a7a9a;
+      --card-sh: 0 4px 30px rgba(126, 90, 155, 0.10);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(145deg, #f5eef8 0%, #ede8f5 45%, #e8f0f5 100%);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    /* ── Blobs de fundo ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      pointer-events: none;
+      animation: breathe 10s ease-in-out infinite;
+    }
+
+    .blob-1 {
+      width: 520px;
+      height: 520px;
+      background: #d4b0e8;
+      top: -160px;
+      left: -160px;
+      animation-delay: 0s;
+    }
+
+    .blob-2 {
+      width: 400px;
+      height: 400px;
+      background: #f0b8c8;
+      bottom: -120px;
+      right: -100px;
+      animation-delay: 3s;
+    }
+
+    .blob-3 {
+      width: 300px;
+      height: 300px;
+      background: #a8d5c2;
+      top: 50%;
+      left: 55%;
+      animation-delay: 6s;
+    }
+
+    @keyframes breathe {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.10);
+      }
+    }
+
+    /* ── Layout ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .header-left .greeting {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1.1;
+      background: linear-gradient(130deg, var(--mauve) 0%, var(--rose) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-left .sub {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 300;
+      letter-spacing: 0.5px;
+    }
+
+    .clock-badge {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      border-radius: 16px;
+      padding: 12px 22px;
+      text-align: right;
+      box-shadow: var(--card-sh);
+    }
+
+    .clock-badge .time {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.9rem;
+      color: var(--mauve);
+    }
+
+    .clock-badge .date-str {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+      letter-spacing: 0.4px;
+    }
+
+    /* ── Summary cards ── */
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 680px) {
+      .summary-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Chart panel ── */
+    .chart-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      border-radius: 22px;
+      padding: 24px 28px 20px;
+      box-shadow: var(--card-sh);
+      margin-bottom: 24px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chart-header .panel-title {
+      margin-bottom: 0;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 160px;
+    }
+
+    .s-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      border-radius: 22px;
+      padding: 28px 24px;
+      box-shadow: var(--card-sh);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+
+    .s-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(126, 90, 155, 0.16);
+    }
+
+    .s-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .icon-mail {
+      background: linear-gradient(135deg, #f3d0dc, #f8e8ec);
+    }
+
+    .icon-cal {
+      background: linear-gradient(135deg, #d8cef5, #ece7fb);
+    }
+
+    .icon-task {
+      background: linear-gradient(135deg, #c8e9df, #ddf2eb);
+    }
+
+    .s-info .label {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .s-info .number {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.2rem;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .s-info .hint {
+      font-size: 0.77rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ── Main grid ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 340px;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Panel card ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: var(--card-sh);
+    }
+
+    .panel-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title span {
+      font-size: 1rem;
+    }
+
+    /* ── Email list ── */
+    .email-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(180, 140, 200, 0.12);
+    }
+
+    .email-item:last-child {
+      border-bottom: none;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #fff;
+    }
+
+    .av-a {
+      background: linear-gradient(135deg, #c9748f, #a05070);
+    }
+
+    .av-b {
+      background: linear-gradient(135deg, #7e5a9b, #5a3a7a);
+    }
+
+    .av-c {
+      background: linear-gradient(135deg, #7aab95, #4a8070);
+    }
+
+    .av-d {
+      background: linear-gradient(135deg, #d4956a, #b07040);
+    }
+
+    .av-e {
+      background: linear-gradient(135deg, #9b7aab, #7a5a90);
+    }
+
+    .email-body .sender {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .email-body .subject {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .unread-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--rose);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    /* ── Reuniões ── */
+    .meeting-item {
+      display: flex;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(180, 140, 200, 0.12);
+      align-items: flex-start;
+    }
+
+    .meeting-item:last-child {
+      border-bottom: none;
+    }
+
+    .meet-time {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--mauve);
+      width: 44px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+
+    .meet-bar {
+      width: 3px;
+      border-radius: 4px;
+      align-self: stretch;
+      min-height: 36px;
+      flex-shrink: 0;
+    }
+
+    .bar-rose {
+      background: var(--rose);
+    }
+
+    .bar-mauve {
+      background: var(--mauve);
+    }
+
+    .bar-sage {
+      background: var(--sage);
+    }
+
+    .bar-lilac {
+      background: var(--lilac);
+    }
+
+    .meet-info .title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .meet-info .meta {
+      font-size: 0.76rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 5px;
+    }
+
+    .tag-video {
+      background: #ede7fb;
+      color: #7e5a9b;
+    }
+
+    .tag-pres {
+      background: #fce8ee;
+      color: #c9748f;
+    }
+
+    .tag-focus {
+      background: #e2f2ec;
+      color: #4a8070;
+    }
+
+    /* ── Sidebar (sugestões + automações) ── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        grid-column: span 2;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .sidebar {
+        grid-column: span 1;
+        flex-direction: column;
+      }
+    }
+
+    .tip-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(180, 140, 200, 0.12);
+      align-items: flex-start;
+    }
+
+    .tip-item:last-child {
+      border-bottom: none;
+    }
+
+    .tip-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .tip-text {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .tip-text strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
+
+    .auto-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: rgba(126, 90, 155, 0.06);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      transition: background .2s;
+    }
+
+    .auto-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .auto-item:hover {
+      background: rgba(126, 90, 155, 0.12);
+    }
+
+    .auto-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--mauve), var(--rose));
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .auto-text {
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    /* ── Focus pill ── */
+    .focus-banner {
+      margin-bottom: 24px;
+      background: linear-gradient(130deg, var(--mauve), var(--rose));
+      border-radius: 18px;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 6px 30px rgba(201, 116, 143, 0.28);
+    }
+
+    .focus-banner .fb-icon {
+      font-size: 1.6rem;
+    }
+
+    .focus-banner .fb-text .fb-label {
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .focus-banner .fb-text .fb-main {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.15rem;
+      color: #fff;
+      margin-top: 2px;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(126, 90, 155, 0.25);
+      border-radius: 10px;
+    }
+
+    /* ── Login Overlay ── */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: linear-gradient(145deg, #f5eef8 0%, #ede8f5 50%, #e8f0f5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity .5s ease;
+    }
+
+    .login-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(180, 140, 200, 0.3);
+      backdrop-filter: blur(24px);
+      border-radius: 28px;
+      padding: 52px 56px;
+      text-align: center;
+      box-shadow: 0 8px 48px rgba(126, 90, 155, 0.15);
+      max-width: 420px;
+      width: 90%;
+      animation: fadeUp .8s cubic-bezier(.22, 1, .36, 1) both;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .login-logo {
+      font-size: 2.8rem;
+      margin-bottom: 16px;
+    }
+
+    .login-card h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.8rem;
+      background: linear-gradient(130deg, var(--mauve), var(--rose));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .login-card p {
+      font-size: .88rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .google-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      border: 1.5px solid rgba(180, 140, 200, 0.4);
+      border-radius: 50px;
+      padding: 13px 28px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(126, 90, 155, 0.12);
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .google-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(126, 90, 155, 0.2);
+    }
+
+    .google-btn svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .login-scopes {
+      margin-top: 20px;
+      font-size: .72rem;
+      color: var(--muted);
+      letter-spacing: .4px;
+    }
+
+    /* ── User Pill ── */
+    .user-pill {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(180, 140, 200, 0.25);
+      backdrop-filter: blur(18px);
+      border-radius: 50px;
+      padding: 6px 14px 6px 6px;
+      box-shadow: 0 2px 12px rgba(126, 90, 155, 0.10);
+    }
+
+    .user-pill.visible {
+      display: flex;
+    }
+
+    .user-pill img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .user-pill .uname {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: .72rem;
+      color: var(--muted);
+      padding: 2px 6px;
+      border-radius: 8px;
+      transition: color .2s;
+    }
+
+    .logout-btn:hover {
+      color: var(--rose);
+    }
+
+    /* ── Loading skeleton ── */
+    .loading {
+      opacity: .45;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Login Overlay -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">✦</div>
+      <h2>Por onde começo hoje?</h2>
+      <p>Conecte sua conta Google para ver seus emails e reuniões reais</p>
+      <button id="loginBtn" class="google-btn">
+        <svg viewBox="0 0 48 48">
+          <path fill="#EA4335"
+            d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.5 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z" />
+          <path fill="#4285F4"
+            d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z" />
+          <path fill="#FBBC05"
+            d="M10.5 28.7A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.7 10.7l7.8-6z" />
+          <path fill="#34A853"
+            d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-7.8 6C6.6 42.6 14.6 48 24 48z" />
+        </svg>
+        Entrar com Google
+      </button>
+      <p class="login-scopes">Emails · Calendário · Somente leitura</p>
+    </div>
+  </div>
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="page">
+
+    <!-- Header -->
+    <header>
+      <div class="header-left">
+        <h1 class="greeting">Por onde começo hoje? ✦</h1>
+        <p class="sub">Bom dia! Aqui está o seu resumo matinal ☀️</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="userPill" class="user-pill">
+          <img id="userAvatar" src="" alt="avatar" />
+          <span id="userName" class="uname"></span>
+          <button class="logout-btn" onclick="handleLogout()">sair</button>
+        </div>
+        <div class="clock-badge">
+          <div class="time" id="clock">08:07</div>
+          <div class="date-str" id="datestr">sábado, 17 de maio de 2026</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Focus do dia -->
+    <div class="focus-banner">
+      <div class="fb-icon">🎯</div>
+      <div class="fb-text">
+        <div class="fb-label">Foco principal de hoje</div>
+        <div class="fb-main">Finalizar proposta do cliente Nexus e preparar apresentação das 14h</div>
+      </div>
+    </div>
+
+    <!-- 3 Summary Cards -->
+    <div class="summary-row">
+      <div class="s-card" id="card-emails">
+        <div class="s-icon icon-mail">📧</div>
+        <div class="s-info">
+          <div class="label">Emails não lidos</div>
+          <div class="number">12</div>
+          <div class="hint">3 marcados como urgentes</div>
+        </div>
+      </div>
+      <div class="s-card" id="card-meetings">
+        <div class="s-icon icon-cal">📅</div>
+        <div class="s-info">
+          <div class="label">Reuniões hoje</div>
+          <div class="number">4</div>
+          <div class="hint">Próxima em 53 minutos</div>
+        </div>
+      </div>
+      <div class="s-card" id="card-tasks">
+        <div class="s-icon icon-task">✅</div>
+        <div class="s-info">
+          <div class="label">Tarefas pendentes</div>
+          <div class="number">7</div>
+          <div class="hint">2 com prazo hoje</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart: volume de emails na semana -->
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div class="panel-title"><span>📊</span> Volume de emails na semana</div>
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:rgba(126,90,155,0.65);"></span>Dias anteriores</span>
+          <span><span class="legend-dot" style="background:rgba(201,116,143,0.90);"></span>Hoje</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="emailChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+
+      <!-- Emails -->
+      <div class="panel">
+        <div class="panel-title"><span>📧</span> Emails prioritários</div>
+        <div class="email-item">
+          <div class="avatar av-a">AM</div>
+          <div class="email-body">
+            <div class="sender">Ana Mello</div>
+            <div class="subject">Contrato Nexus — revisão final pendente</div>
+          </div>
+          <div class="unread-dot"></div>
+        </div>
+        <div class="email-item">
+          <div class="avatar av-b">RC</div>
+          <div class="email-body">
+            <div class="sender">Rafael Costa</div>
+            <div class="subject">Briefing da campanha de junho 📎</div>
+          </div>
+          <div class="unread-dot"></div>
+        </div>
+        <div class="email-item">
+          <div class="avatar av-c">LF</div>
+          <div class="email-body">
+            <div class="sender">Luiza Ferraz</div>
+            <div class="subject">Aprovação de orçamento — resposta necessária</div>
+          </div>
+          <div class="unread-dot"></div>
+        </div>
+        <div class="email-item">
+          <div class="avatar av-d">TK</div>
+          <div class="email-body">
+            <div class="sender">Time de Design</div>
+            <div class="subject">Assets atualizados no Figma ✨</div>
+          </div>
+        </div>
+        <div class="email-item">
+          <div class="avatar av-e">MV</div>
+          <div class="email-body">
+            <div class="sender">Marcos Viana</div>
+            <div class="subject">Re: Estratégia Q2 — alinhamento</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reuniões -->
+      <div class="panel">
+        <div class="panel-title"><span>📅</span> Agenda de hoje</div>
+        <div class="meeting-item">
+          <div class="meet-time">09:00</div>
+          <div class="meet-bar bar-rose"></div>
+          <div class="meet-info">
+            <div class="title">Daily de equipe</div>
+            <div class="meta">30 min · Google Meet</div>
+            <span class="tag tag-video">🎥 Vídeo</span>
+          </div>
+        </div>
+        <div class="meeting-item">
+          <div class="meet-time">11:00</div>
+          <div class="meet-bar bar-mauve"></div>
+          <div class="meet-info">
+            <div class="title">Review com cliente Nexus</div>
+            <div class="meta">60 min · Sala B + Meet</div>
+            <span class="tag tag-pres">📊 Apresentação</span>
+          </div>
+        </div>
+        <div class="meeting-item">
+          <div class="meet-time">14:00</div>
+          <div class="meet-bar bar-lilac"></div>
+          <div class="meet-info">
+            <div class="title">Apresentação de resultados</div>
+            <div class="meta">90 min · Sala de reuniões</div>
+            <span class="tag tag-pres">📊 Apresentação</span>
+          </div>
+        </div>
+        <div class="meeting-item">
+          <div class="meet-time">16:30</div>
+          <div class="meet-bar bar-sage"></div>
+          <div class="meet-info">
+            <div class="title">Bloco de foco — sem reuniões</div>
+            <div class="meta">60 min · Reservado</div>
+            <span class="tag tag-focus">🌿 Foco</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+
+        <!-- Novas formas de fazer -->
+        <div class="panel">
+          <div class="panel-title"><span>💡</span> Faça diferente hoje</div>
+          <div class="tip-item">
+            <div class="tip-icon">⚡</div>
+            <div class="tip-text">
+              <strong>Responda emails em lote</strong>
+              Reserve 20 min agora e mais 20 após o almoço — evite checar o tempo todo.
+            </div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-icon">🧠</div>
+            <div class="tip-text">
+              <strong>Prepare a apresentação antes da reunião das 11h</strong>
+              Use os primeiros 40 min do dia para isso, sem interrupções.
+            </div>
+          </div>
+          <div class="tip-item">
+            <div class="tip-icon">🔕</div>
+            <div class="tip-text">
+              <strong>Ative o "Não perturbe"</strong>
+              Durante a reunião das 14h para garantir foco total.
+            </div>
+          </div>
+        </div>
+
+        <!-- Sugestões de automação -->
+        <div class="panel">
+          <div class="panel-title"><span>🤖</span> Automações sugeridas</div>
+          <div class="auto-item">
+            <div class="auto-num">1</div>
+            <div class="auto-text">Criar resposta automática para emails fora do horário de reuniões</div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-num">2</div>
+            <div class="auto-text">Lembrete 10 min antes de cada reunião com o link do Meet</div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-num">3</div>
+            <div class="auto-text">Mover emails do time de Design para pasta "Assets" automaticamente</div>
+          </div>
+          <div class="auto-item">
+            <div class="auto-num">4</div>
+            <div class="auto-text">Gerar resumo semanal de tarefas toda sexta às 17h via email</div>
+          </div>
+        </div>
+
+      </div><!-- /sidebar -->
+    </div><!-- /main-grid -->
+  </div><!-- /page -->
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script>
+    const CLIENT_ID = '1068412594576-jljietdcumglt3s60p03pce62tpa683k.apps.googleusercontent.com';
+    const SCOPES = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/tasks.readonly';
+    let tokenClient, accessToken = null;
+
+    /* ── Clock ── */
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function tick() {
+      const now = new Date();
+      document.getElementById('clock').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      document.getElementById('datestr').textContent =
+        now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    }
+    tick(); setInterval(tick, 10000);
+
+    /* ── Chart.js ── */
+    function initChart() {
+      const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Hoje'];
+      const data = [12, 5, 8, 20, 3, 15, 9];
+      const last = data.length - 1;
+      const ctx = document.getElementById('emailChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels, datasets: [{
+            label: 'Emails recebidos', data,
+            backgroundColor: data.map((_, i) => i === last ? 'rgba(201,116,143,.90)' : 'rgba(126,90,155,.55)'),
+            hoverBackgroundColor: data.map((_, i) => i === last ? 'rgba(201,116,143,1)' : 'rgba(126,90,155,.80)'),
+            borderRadius: 10, borderSkipped: false, barPercentage: .6
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(46,31,62,.92)', titleColor: '#e8d5f5',
+              bodyColor: '#c8b0e0', padding: 10, cornerRadius: 10, displayColors: false,
+              callbacks: { title: i => labels[i[0].dataIndex], label: i => `${i.raw} emails recebidos` }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, border: { display: false }, ticks: { color: '#8a7a9a', font: { family: "'DM Sans',sans-serif", size: 12 } } },
+            y: {
+              grid: { color: 'rgba(180,140,200,.12)' }, border: { display: false, dash: [4, 4] },
+              ticks: { color: '#8a7a9a', font: { family: "'DM Sans',sans-serif", size: 11 }, stepSize: 5, maxTicksLimit: 5 },
+              beginAtZero: true
+            }
+          },
+          animation: { duration: 900, easing: 'easeOutQuart' }
+        }
+      });
+    }
+
+    /* ── Google Identity Services ── */
+    function initGoogleAuth() {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: onTokenReceived,
+      });
+      document.getElementById('loginBtn').addEventListener('click', () => {
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      });
+    }
+
+    async function onTokenReceived(resp) {
+      if (resp.error) { console.error(resp); return; }
+      accessToken = resp.access_token;
+      hideOverlay();
+      await loadUserProfile();
+      await Promise.all([loadGmailData(), loadCalendarData(), loadTasksData()]);
+    }
+
+    /* ── Overlay ── */
+    function hideOverlay() {
+      const ov = document.getElementById('loginOverlay');
+      ov.classList.add('hidden');
+      setTimeout(() => { ov.style.display = 'none'; }, 500);
+    }
+    function handleLogout() {
+      google.accounts.oauth2.revoke(accessToken, () => {
+        accessToken = null;
+        document.getElementById('userPill').classList.remove('visible');
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('loginOverlay').classList.remove('hidden');
+      });
+    }
+
+    /* ── User Profile ── */
+    async function loadUserProfile() {
+      try {
+        const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',
+          { headers: { Authorization: `Bearer ${accessToken}` } });
+        const p = await r.json();
+        const avatar = document.getElementById('userAvatar');
+        if (p.picture) {
+          avatar.src = p.picture;
+          avatar.style.display = 'block';
+        } else {
+          avatar.style.display = 'none';
+        }
+        document.getElementById('userName').textContent = p.given_name || p.name || p.email || 'Usuária';
+        document.getElementById('userPill').classList.add('visible');
+        document.querySelector('.sub').textContent =
+          `Bom dia, ${p.given_name || 'bem-vinda'}! Aqui está o seu resumo de hoje ☀️`;
+      } catch (e) { console.error('UserProfile error', e); }
+    }
+
+    /* ── Gmail ── */
+    async function loadGmailData() {
+      try {
+        /* Unread count via INBOX label */
+        const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels/INBOX',
+          { headers: { Authorization: `Bearer ${accessToken}` } });
+        const d = await r.json();
+        const unread = d.messagesUnread ?? '?';
+        document.querySelector('#card-emails .number').textContent = unread;
+        document.querySelector('#card-emails .hint').textContent =
+          unread === 1 ? '1 email não lido' : `${unread} emails não lidos`;
+
+        /* Fetch up to 5 most recent unread for the list */
+        const lr = await fetch(
+          'https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread&maxResults=5',
+          { headers: { Authorization: `Bearer ${accessToken}` } });
+        const ld = await lr.json();
+        if (ld.messages && ld.messages.length) {
+          const details = await Promise.all(
+            ld.messages.map(m =>
+              fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`,
+                { headers: { Authorization: `Bearer ${accessToken}` } }).then(r => r.json())
+            )
+          );
+          renderEmailList(details);
+        }
+      } catch (e) { console.error('Gmail error', e); }
+    }
+
+    function parseName(fromHeader) {
+      const m = fromHeader.match(/^"?([^"<]+)"?\s*</);
+      return m ? m[1].trim() : fromHeader.split('@')[0];
+    }
+    function initials(name) {
+      const parts = name.split(' ');
+      return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+    }
+    const PILL_COLORS = ['av-a', 'av-b', 'av-c', 'av-d', 'av-e'];
+
+    function renderEmailList(messages) {
+      const container = document.getElementById('emailList');
+      container.innerHTML = '';
+      messages.forEach((msg, i) => {
+        const headers = msg.payload.headers;
+        const fromH = headers.find(h => h.name === 'From')?.value || 'Desconhecido';
+        const subjectH = headers.find(h => h.name === 'Subject')?.value || '(sem assunto)';
+        const name = parseName(fromH);
+        const ini = initials(name);
+        const color = PILL_COLORS[i % PILL_COLORS.length];
+        container.innerHTML += `
+          <div class="email-item">
+            <div class="avatar ${color}">${ini}</div>
+            <div class="email-body">
+              <div class="sender">${name}</div>
+              <div class="subject">${subjectH}</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>`;
+      });
+    }
+
+    /* ── Calendar ── */
+    async function loadCalendarData() {
+      try {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+        const r = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${start}&timeMax=${end}&singleEvents=true&orderBy=startTime`,
+          { headers: { Authorization: `Bearer ${accessToken}` } });
+        const d = await r.json();
+        const events = d.items || [];
+
+        document.querySelector('#card-meetings .number').textContent = events.length;
+        const nextEv = events.find(e => new Date(e.start?.dateTime || e.start?.date) > now);
+        document.querySelector('#card-meetings .hint').textContent = nextEv
+          ? `Próxima: ${nextEv.summary?.slice(0, 28)}`
+          : events.length ? 'Todas as reuniões passaram' : 'Nenhuma reunião hoje';
+
+        renderCalendar(events);
+      } catch (e) { console.error('Calendar error', e); }
+    }
+
+    const BAR_COLORS = ['bar-rose', 'bar-mauve', 'bar-lilac', 'bar-sage'];
+    function renderCalendar(events) {
+      const container = document.getElementById('calendarList');
+      if (!events.length) {
+        container.innerHTML = '<p style="color:var(--muted);font-size:.85rem;padding:12px 0">Nenhum evento encontrado para hoje.</p>';
+        return;
+      }
+      container.innerHTML = '';
+      events.slice(0, 5).forEach((ev, i) => {
+        const startDt = ev.start?.dateTime ? new Date(ev.start.dateTime) : null;
+        const timeStr = startDt ? pad(startDt.getHours()) + ':' + pad(startDt.getMinutes()) : 'Dia todo';
+        const dur = ev.start?.dateTime && ev.end?.dateTime
+          ? Math.round((new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 60000) + ' min'
+          : '';
+        const loc = ev.location ? ev.location.slice(0, 30) : (ev.conferenceData ? 'Google Meet' : '');
+        const bar = BAR_COLORS[i % BAR_COLORS.length];
+        container.innerHTML += `
+          <div class="meeting-item">
+            <div class="meet-time">${timeStr}</div>
+            <div class="meet-bar ${bar}"></div>
+            <div class="meet-info">
+              <div class="title">${ev.summary || 'Evento sem título'}</div>
+              <div class="meta">${[dur, loc].filter(Boolean).join(' · ')}</div>
+              ${ev.conferenceData ? '<span class="tag tag-video">🎥 Vídeo</span>' : ''}
+            </div>
+          </div>`;
+      });
+    }
+
+    /* ── Tasks ── */
+    async function loadTasksData() {
+      try {
+        const r = await fetch('https://tasks.googleapis.com/tasks/v1/lists/@default/tasks?showCompleted=false',
+          { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (!r.ok) throw new Error('Tasks API error');
+        const d = await r.json();
+        const tasks = d.items || [];
+        document.querySelector('#card-tasks .number').textContent = tasks.length;
+        document.querySelector('#card-tasks .hint').textContent =
+          tasks.length === 1 ? '1 tarefa pendente' : `${tasks.length} tarefas pendentes`;
+      } catch (e) { console.error('Tasks error', e); }
+    }
+
+    /* ── Boot ── */
+    window.onload = function () {
+      initChart();
+      /* GSI loads async — poll until ready */
+      const wait = setInterval(() => {
+        if (window.google?.accounts?.oauth2) { clearInterval(wait); initGoogleAuth(); }
+      }, 100);
+    };
+  </script>
+
+  <!-- IDs necessários no HTML para os seletores JS -->
+</body>
+
+</html>

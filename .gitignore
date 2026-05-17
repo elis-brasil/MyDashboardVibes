@@ -1,0 +1,6 @@
+Agentes de IA - Marivone (1).pptx
+.env
+node_modules/
+.DS_Store
+client_secret*.json
+*.json
