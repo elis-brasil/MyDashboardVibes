@@ -750,6 +750,78 @@
       color: var(--rose);
     }
 
+    /* ── Moodboard & Cycle ── */
+    .mood-selector {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mood-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .mood-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(126, 90, 155, 0.12);
+      border-color: rgba(180, 140, 200, 0.5);
+    }
+
+    .mood-btn.active {
+      background: linear-gradient(135deg, var(--mauve), var(--rose));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 6px 16px rgba(201, 116, 143, 0.25);
+    }
+
+    .cycle-alert {
+      margin-top: 18px;
+      padding: 16px;
+      background: linear-gradient(135deg, #fdf3f6, #f8e8ec);
+      border-radius: 16px;
+      border: 1px solid rgba(201, 116, 143, 0.2);
+      display: none;
+    }
+
+    .cycle-alert.active {
+      display: block;
+      animation: fadeUp 0.5s cubic-bezier(.22, 1, .36, 1) both;
+    }
+
+    .cycle-alert-title {
+      font-weight: 600;
+      color: var(--rose);
+      margin-bottom: 6px;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cycle-alert-text {
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .cycle-alert-text strong {
+      display: block;
+      margin-top: 6px;
+      color: var(--mauve);
+      font-weight: 600;
+    }
+
     /* ── Loading skeleton ── */
     .loading {
       opacity: .45;
@@ -948,6 +1020,25 @@
 
       <!-- Sidebar -->
       <div class="sidebar">
+
+        <!-- Moodboard -->
+        <div class="panel" id="moodboard-panel">
+          <div class="panel-title"><span>✨</span> Como você está se sentindo hoje?</div>
+          <div class="mood-selector" id="moodSelector">
+            <button class="mood-btn" data-mood="feliz">😊 Feliz</button>
+            <button class="mood-btn" data-mood="tranquila">😌 Tranquila</button>
+            <button class="mood-btn" data-mood="cansada">🥱 Cansada</button>
+            <button class="mood-btn" data-mood="triste">😢 Triste</button>
+            <button class="mood-btn" data-mood="irritada">😠 Irritada</button>
+          </div>
+          <div class="cycle-alert" id="cycleAlert">
+            <div class="cycle-alert-title">🌸 Momento de Cuidado</div>
+            <div class="cycle-alert-text">
+              Notamos pelos seus registros que você tem estado cansada. É possível que seu ciclo menstrual esteja se aproximando.
+              <strong>É um momento oportuno para o descanso e atividades de menos impacto. Cuide de você! 🤍</strong>
+            </div>
+          </div>
+        </div>
 
         <!-- Novas formas de fazer -->
         <div class="panel">
@@ -1236,9 +1327,71 @@
       } catch (e) { console.error('Tasks error', e); }
     }
 
+    /* ── Moodboard & Cycle Tracking ── */
+    function initMoodboard() {
+      const btns = document.querySelectorAll('.mood-btn');
+      const alertBox = document.getElementById('cycleAlert');
+      
+      let moodHistory = JSON.parse(localStorage.getItem('moodHistory') || '[]');
+
+      // Inicializa com 5 dias de cansaço para refletir o cenário atual
+      if (moodHistory.length < 5 || !moodHistory.includes('cansada')) {
+        moodHistory = ['cansada', 'cansada', 'cansada', 'cansada', 'cansada'];
+        localStorage.setItem('moodHistory', JSON.stringify(moodHistory));
+      }
+
+      // Marca o último humor selecionado na interface
+      const lastMood = moodHistory[moodHistory.length - 1];
+      if (lastMood) {
+        const btnToSelect = Array.from(btns).find(b => b.getAttribute('data-mood') === lastMood);
+        if (btnToSelect) btnToSelect.classList.add('active');
+      }
+      
+      function checkCycle() {
+        const tiredCount = moodHistory.filter(m => m === 'cansada').length;
+        let hasPattern = false;
+
+        if (tiredCount >= 4) {
+          hasPattern = true;
+        } else if (moodHistory.length >= 2) {
+          const lastTwo = moodHistory.slice(-2);
+          if (
+            (lastTwo[0] === 'triste' && lastTwo[1] === 'cansada') ||
+            (lastTwo[0] === 'cansada' && lastTwo[1] === 'triste')
+          ) {
+            hasPattern = true;
+          }
+        }
+
+        if (hasPattern) {
+          alertBox.classList.add('active');
+        } else {
+          alertBox.classList.remove('active');
+        }
+      }
+
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mood = btn.getAttribute('data-mood');
+          
+          moodHistory.push(mood);
+          if (moodHistory.length > 5) moodHistory.shift();
+          localStorage.setItem('moodHistory', JSON.stringify(moodHistory));
+          
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          checkCycle();
+        });
+      });
+      
+      checkCycle();
+    }
+
     /* ── Boot ── */
     window.onload = function () {
       initChart();
+      initMoodboard();
       /* GSI loads async — poll until ready */
       const wait = setInterval(() => {
         if (window.google?.accounts?.oauth2) { clearInterval(wait); initGoogleAuth(); }
